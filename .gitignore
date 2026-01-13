@@ -1,0 +1,32 @@
+# Abhängigkeiten
+node_modules/
+.pnp
+.pnp.js
+
+# Testing
+/coverage
+
+# Produktion / Build
+/build
+/dist
+/.next/
+/out/
+
+# Betriebssystem-spezifische Dateien
+.DS_Store
+Thumbs.db
+*.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Editor-Einstellungen
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Lokale Daten (Falls du Test-JSONs lokal speicherst)
+storage/*.json
