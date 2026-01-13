@@ -1,5 +1,104 @@
-<a href="index.html" class="text-slate-400 hover:text-slate-600 transition-colors">
-  <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-  </svg>
-</a>
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beleg erfassen</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 md:p-8 font-sans">
+    <div class="max-w-xl mx-auto">
+        <div class="flex items-center justify-between mb-8">
+            <a href="index.html" class="text-slate-400 hover:text-slate-600 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+            </a>
+            <h2 class="text-xl font-bold dark:text-white">Beleg erfassen</h2>
+            <div class="w-8"></div>
+        </div>
+
+        <div class="bg-white dark:bg-slate-900 rounded-[2.5rem] p-6 shadow-xl border border-slate-100 dark:border-slate-800">
+            <form id="bookingForm" class="space-y-6">
+                <div class="flex p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl">
+                    <button type="button" id="btn-ausgabe" onclick="setTyp('AUSGABE')" class="flex-1 py-2 text-sm font-bold rounded-xl bg-white shadow text-slate-900">AUSGABE</button>
+                    <button type="button" id="btn-einnahme" onclick="setTyp('EINNAHME')" class="flex-1 py-2 text-sm font-bold text-slate-500">EINNAHME</button>
+                </div>
+
+                <div class="space-y-4">
+                    <input type="text" id="partner" placeholder="Lieferant / Kunde" required class="w-full bg-slate-50 dark:bg-slate-800 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white">
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <input type="date" id="datum" required class="bg-slate-50 dark:bg-slate-800 rounded-2xl px-5 py-4 outline-none dark:text-white">
+                        <select id="kategorie" class="bg-slate-50 dark:bg-slate-800 rounded-2xl px-5 py-4 outline-none dark:text-white">
+                            <option>Büromaterial</option>
+                            <option>Software</option>
+                            <option>Reisekosten</option>
+                            <option>Marketing</option>
+                        </select>
+                    </div>
+
+                    <div class="bg-indigo-50/50 dark:bg-indigo-900/10 p-6 rounded-[2rem] space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <input type="number" id="brutto" step="0.01" placeholder="0,00 €" required class="w-full bg-white dark:bg-slate-800 rounded-xl px-5 py-4 text-xl font-bold outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white">
+                            <select id="ust" class="w-full bg-white dark:bg-slate-800 rounded-xl px-5 py-4 text-xl font-bold outline-none dark:text-white">
+                                <option value="19">19% USt</option>
+                                <option value="7">7% USt</option>
+                                <option value="0">0% USt</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <input type="text" id="beschreibung" placeholder="Beschreibung (optional)" class="w-full bg-slate-50 dark:bg-slate-800 rounded-2xl px-5 py-4 outline-none dark:text-white">
+                </div>
+
+                <button type="submit" class="w-full bg-indigo-600 text-white font-bold py-5 rounded-full shadow-lg active:scale-95 transition-all">
+                    Speichern
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let selectedTyp = 'AUSGABE';
+        document.getElementById('datum').valueAsDate = new Date();
+
+        function setTyp(typ) {
+            selectedTyp = typ;
+            document.getElementById('btn-ausgabe').className = typ === 'AUSGABE' ? 'flex-1 py-2 text-sm font-bold rounded-xl bg-white shadow text-slate-900' : 'flex-1 py-2 text-sm font-bold text-slate-500';
+            document.getElementById('btn-einnahme').className = typ === 'EINNAHME' ? 'flex-1 py-2 text-sm font-bold rounded-xl bg-white shadow text-slate-900' : 'flex-1 py-2 text-sm font-bold text-slate-500';
+        }
+
+        document.getElementById('bookingForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const brutto = parseFloat(document.getElementById('brutto').value);
+            const ustSatz = parseFloat(document.getElementById('ust').value);
+            const netto = parseFloat((brutto / (1 + (ustSatz/100))).toFixed(2));
+            const d = new Date(document.getElementById('datum').value);
+
+            const record = {
+                id: Date.now().toString(36).toUpperCase(),
+                datum: document.getElementById('datum').value,
+                typ: selectedTyp,
+                kategorie: document.getElementById('kategorie').value,
+                lieferant_kunde: document.getElementById('partner').value,
+                beschreibung: document.getElementById('beschreibung').value,
+                betrag_brutto: brutto,
+                betrag_netto: netto,
+                ust_satz: ustSatz,
+                ust_betrag: parseFloat((brutto - netto).toFixed(2)),
+                jahr: d.getFullYear(),
+                monat: d.getMonth() + 1,
+                quartal: Math.floor(d.getMonth() / 3) + 1,
+                beleg_status: 'ERFASST',
+                ist_exportiert: false
+            };
+
+            const data = JSON.parse(localStorage.getItem('meine_buchungen')) || [];
+            data.push(record);
+            localStorage.setItem('meine_buchungen', JSON.stringify(data));
+            
+            window.location.href = 'index.html';
+        });
+    </script>
+</body>
+</html>
